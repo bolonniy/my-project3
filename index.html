@@ -1,11 +1,137 @@
 <!DOCTYPE html>
-<html>
+<html lang="uk">
 <head>
-<meta charset="UTF-8">
-<title>Сайт</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Супер Сайт</title>
+    <style>
+        /* Скидаємо стандартні відступи */
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #000; font-family: 'Courier New', Courier, monospace; color: #0f0; }
+        
+        /* Канвас для фону матриці */
+        canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
+        
+        /* Головний контейнер по центру */
+        .container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        /* Неонова картка */
+        .glass-panel {
+            background: rgba(0, 20, 0, 0.7);
+            padding: 40px;
+            border-radius: 15px;
+            border: 2px solid #0f0;
+            box-shadow: 0 0 20px #0f0, inset 0 0 20px #0f0;
+            text-align: center;
+            backdrop-filter: blur(5px);
+            animation: pulse 2s infinite alternate;
+        }
+
+        /* Анімація пульсації */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 15px #0f0, inset 0 0 15px #0f0; }
+            100% { box-shadow: 0 0 35px #0f0, inset 0 0 30px #0f0; border-color: #5fff5f; }
+        }
+
+        h1 { font-size: 3em; margin: 0 0 10px 0; text-transform: uppercase; text-shadow: 0 0 10px #0f0, 0 0 20px #0f0; letter-spacing: 2px; }
+        p { font-size: 1.5em; text-shadow: 0 0 5px #0f0; margin-bottom: 20px; }
+        hr { border: none; height: 2px; background-color: #0f0; box-shadow: 0 0 10px #0f0; margin: 20px 0; }
+        h2 { text-shadow: 0 0 8px #0f0; }
+
+        /* Стилі хакерської форми */
+        form { display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 400px; margin: 0 auto; }
+        input, textarea {
+            background: rgba(0, 50, 0, 0.3);
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 12px;
+            font-family: inherit;
+            font-size: 1em;
+            box-shadow: inset 0 0 5px #0f0;
+            transition: 0.3s;
+        }
+        input:focus, textarea:focus { outline: none; box-shadow: inset 0 0 15px #0f0; background: rgba(0, 50, 0, 0.6); }
+        input::placeholder, textarea::placeholder { color: #077; }
+        
+        input[type="submit"] {
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        input[type="submit"]:hover { background: #0f0; color: #000; box-shadow: 0 0 25px #0f0; }
+    </style>
 </head>
 <body>
-<h1>Текст</h1>
-<p>Маленький текст</p>
+
+    <canvas id="matrix"></canvas>
+
+    <div class="container">
+        <div class="glass-panel">
+            <h1>Мій перший сайт</h1>
+            <p>Сайт успішно (і епічно) працює!</p>
+            
+            <hr>
+            
+            <h2>Зворотний зв'язок</h2>
+            <form onsubmit="event.preventDefault(); alert('Дані відправлено в Матрицю!');">
+                <input type="text" id="name" name="name" placeholder="Твоє ім'я, Нео" required>
+                <textarea id="message" name="message" rows="3" placeholder="Слідуй за білим кроликом..." required></textarea>
+                <input type="submit" value="ВІДПРАВИТИ В МАТРИЦЮ">
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        // Робимо канвас на весь екран
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const katakana = 'АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ0123456789@#$%^&*';
+        const characters = katakana.split('');
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+
+        const drops = [];
+        for (let x = 0; x < columns; x++) {
+            drops[x] = 1;
+        }
+
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#0F0';
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = characters[Math.floor(Math.random() * characters.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        setInterval(draw, 33);
+
+        // Оновлюємо розмір при зміні вікна
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
 </body>
 </html>
