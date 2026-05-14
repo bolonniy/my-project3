@@ -3,135 +3,271 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Супер Сайт</title>
+    <title>Лабораторна | Secure Terminal</title>
     <style>
-        /* Скидаємо стандартні відступи */
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #000; font-family: 'Courier New', Courier, monospace; color: #0f0; }
-        
-        /* Канвас для фону матриці */
-        canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
-        
-        /* Головний контейнер по центру */
-        .container {
-            position: relative;
-            z-index: 1;
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --cyan: #00f3ff;
+            --dark-bg: #030613;
+            --panel-bg: rgba(4, 13, 33, 0.85);
+            --border: 1px solid rgba(0, 243, 255, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Share Tech Mono', monospace; }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--cyan);
+            overflow: hidden;
+            height: 100vh;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100%;
         }
 
-        /* Неонова картка */
-        .glass-panel {
-            background: rgba(0, 20, 0, 0.7);
-            padding: 40px;
-            border-radius: 15px;
-            border: 2px solid #0f0;
-            box-shadow: 0 0 20px #0f0, inset 0 0 20px #0f0;
-            text-align: center;
-            backdrop-filter: blur(5px);
-            animation: pulse 2s infinite alternate;
+        /* Канвас для фону (частинки) */
+        #bg-canvas { position: absolute; top: 0; left: 0; z-index: 0; opacity: 0.6; }
+
+        /* Лінії сканування (CRT ефект) */
+        .scanlines {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 3px 100%; z-index: 10; pointer-events: none;
         }
 
-        /* Анімація пульсації */
-        @keyframes pulse {
-            0% { box-shadow: 0 0 15px #0f0, inset 0 0 15px #0f0; }
-            100% { box-shadow: 0 0 35px #0f0, inset 0 0 30px #0f0; border-color: #5fff5f; }
+        /* Основний контейнер */
+        .dashboard {
+            position: relative; z-index: 5;
+            width: 90%; max-width: 1200px; display: grid;
+            grid-template-columns: 1fr 2fr; gap: 20px;
+            animation: bootUp 2s ease-out;
         }
 
-        h1 { font-size: 3em; margin: 0 0 10px 0; text-transform: uppercase; text-shadow: 0 0 10px #0f0, 0 0 20px #0f0; letter-spacing: 2px; }
-        p { font-size: 1.5em; text-shadow: 0 0 5px #0f0; margin-bottom: 20px; }
-        hr { border: none; height: 2px; background-color: #0f0; box-shadow: 0 0 10px #0f0; margin: 20px 0; }
-        h2 { text-shadow: 0 0 8px #0f0; }
-
-        /* Стилі хакерської форми */
-        form { display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 400px; margin: 0 auto; }
-        input, textarea {
-            background: rgba(0, 50, 0, 0.3);
-            border: 1px solid #0f0;
-            color: #0f0;
-            padding: 12px;
-            font-family: inherit;
-            font-size: 1em;
-            box-shadow: inset 0 0 5px #0f0;
-            transition: 0.3s;
+        /* Панелі зі скошеними кутами */
+        .panel {
+            background: var(--panel-bg); border: var(--border);
+            padding: 30px; box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+            backdrop-filter: blur(10px); position: relative;
+            clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
         }
-        input:focus, textarea:focus { outline: none; box-shadow: inset 0 0 15px #0f0; background: rgba(0, 50, 0, 0.6); }
-        input::placeholder, textarea::placeholder { color: #077; }
         
-        input[type="submit"] {
-            cursor: pointer;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+        .panel::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 10px; height: 10px;
+            border-top: 2px solid var(--cyan); border-left: 2px solid var(--cyan);
         }
-        input[type="submit"]:hover { background: #0f0; color: #000; box-shadow: 0 0 25px #0f0; }
+
+        /* Глітч заголовок */
+        h1 {
+            font-size: 2.5em; text-transform: uppercase; letter-spacing: 2px;
+            margin-bottom: 10px; text-shadow: 0 0 10px var(--cyan);
+            position: relative; display: inline-block;
+        }
+        h1::before, h1::after {
+            content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.8;
+        }
+        h1::before { left: 2px; text-shadow: -2px 0 red; clip: rect(24px, 550px, 90px, 0); animation: glitch-anim 3s infinite linear alternate-reverse; }
+        h1::after { left: -2px; text-shadow: -2px 0 blue; clip: rect(85px, 550px, 140px, 0); animation: glitch-anim 2.5s infinite linear alternate-reverse; }
+
+        @keyframes glitch-anim {
+            0% { clip: rect(10px, 9999px, 44px, 0); }
+            20% { clip: rect(85px, 9999px, 59px, 0); }
+            40% { clip: rect(33px, 9999px, 98px, 0); }
+            60% { clip: rect(71px, 9999px, 23px, 0); }
+            80% { clip: rect(14px, 9999px, 86px, 0); }
+            100% { clip: rect(56px, 9999px, 12px, 0); }
+        }
+
+        h2 { font-size: 1.2em; border-bottom: 1px solid rgba(0, 243, 255, 0.3); padding-bottom: 5px; margin-bottom: 15px; text-transform: uppercase; }
+        p { margin-bottom: 15px; font-size: 0.9em; line-height: 1.5; color: #a0d8ef; }
+
+        /* Термінал */
+        .terminal { font-size: 0.85em; color: #0f0; background: rgba(0,20,0,0.5); padding: 15px; border: 1px solid #0f0; height: 150px; overflow-y: auto; margin-bottom: 20px; }
+        .terminal p { color: #0f0; margin: 2px 0; text-shadow: 0 0 5px #0f0; }
+
+        /* Форма зв'язку */
+        form { display: flex; flex-direction: column; gap: 15px; }
+        .input-group { position: relative; }
+        input, textarea {
+            width: 100%; background: rgba(0, 243, 255, 0.05); border: 1px solid rgba(0, 243, 255, 0.4);
+            color: var(--cyan); padding: 12px; font-family: inherit; transition: 0.3s;
+        }
+        input:focus, textarea:focus { outline: none; background: rgba(0, 243, 255, 0.15); border-color: var(--cyan); box-shadow: 0 0 15px rgba(0, 243, 255, 0.3); }
+        input::placeholder, textarea::placeholder { color: rgba(0, 243, 255, 0.4); }
+        
+        button {
+            background: transparent; border: 1px solid var(--cyan); color: var(--cyan);
+            padding: 12px; cursor: pointer; text-transform: uppercase; font-weight: bold; letter-spacing: 2px;
+            transition: all 0.3s ease; position: relative; overflow: hidden;
+        }
+        button:hover { background: var(--cyan); color: #000; box-shadow: 0 0 20px var(--cyan); }
+
+        @keyframes bootUp {
+            0% { opacity: 0; transform: scale(0.95) translateY(20px); filter: blur(10px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+        }
+
+        /* Адаптивність */
+        @media (max-width: 800px) {
+            .dashboard { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
 
-    <canvas id="matrix"></canvas>
+    <canvas id="bg-canvas"></canvas>
+    <div class="scanlines"></div>
 
-    <div class="container">
-        <div class="glass-panel">
-            <h1>Мій перший сайт</h1>
-            <p>Сайт успішно (і епічно) працює!</p>
+    <div class="dashboard">
+        <div class="panel">
+            <h2>> Системний статус</h2>
+            <div class="terminal" id="terminal-output">
+                </div>
+            <p><strong>Мережа:</strong> Захищена (Port 443)</p>
+            <p><strong>Протокол:</strong> HTTPS / TLS 1.3</p>
+            <p><strong>Стан:</strong> Дані зашифровано</p>
+        </div>
+
+        <div class="panel">
+            <h1 data-text="САЙТ ДЛЯ ЛАБОРАТОРНОЇ">САЙТ ДЛЯ ЛАБОРАТОРНОЇ</h1>
+            <p>Лабораторна робота виконана успішно. Статичний веб-сайт розгорнуто на платформі GitHub Pages. З'єднання захищено сертифікатом.</p>
             
-            <hr>
-            
-            <h2>Зворотний зв'язок</h2>
-            <form onsubmit="event.preventDefault(); alert('Дані відправлено в Матрицю!');">
-                <input type="text" id="name" name="name" placeholder="Твоє ім'я, Нео" required>
-                <textarea id="message" name="message" rows="3" placeholder="Слідуй за білим кроликом..." required></textarea>
-                <input type="submit" value="ВІДПРАВИТИ В МАТРИЦЮ">
+            <h2>> Захищений канал зв'язку</h2>
+            <form id="secure-form">
+                <div class="input-group">
+                    <input type="text" id="name" placeholder="ІДЕНТИФІКАТОР КОРИСТУВАЧА" required>
+                </div>
+                <div class="input-group">
+                    <textarea id="message" rows="3" placeholder="ВВЕДІТЬ ПАКЕТ ДАНИХ ДЛЯ ПЕРЕДАЧІ..." required></textarea>
+                </div>
+                <button type="submit">Ініціювати передачу</button>
             </form>
         </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('matrix');
-        const ctx = canvas.getContext('2d');
+        /* 1. Скрипт для терміналу (друкує текст безпеки) */
+        const terminalText = [
+            "Ініціалізація з'єднання...",
+            "Отримання SSL/TLS сертифіката: УСПІШНО",
+            "Перевірка центру сертифікації: VALID",
+            "Погодження ключа шифрування (RSA-2048)...",
+            "Обмін ключами завершено.",
+            "Mixed Content: НЕ ЗНАЙДЕНО",
+            "Захищений тунель встановлено."
+        ];
+        const terminalOutput = document.getElementById('terminal-output');
+        let lineIndex = 0;
 
-        // Робимо канвас на весь екран
+        function typeLine() {
+            if (lineIndex < terminalText.length) {
+                const p = document.createElement('p');
+                p.innerHTML = `> ${terminalText[lineIndex]}`;
+                terminalOutput.appendChild(p);
+                terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                lineIndex++;
+                setTimeout(typeLine, Math.random() * 800 + 400); // Випадкова затримка
+            } else {
+                const p = document.createElement('p');
+                p.style.color = "var(--cyan)";
+                p.innerHTML = "> СИСТЕМА ГОТОВА.";
+                terminalOutput.appendChild(p);
+            }
+        }
+        setTimeout(typeLine, 1000);
+
+        /* 2. Обробка форми */
+        document.getElementById('secure-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.innerText = "ШИФРУВАННЯ ТА ВІДПРАВКА...";
+            btn.style.background = "var(--cyan)";
+            btn.style.color = "#000";
+            
+            setTimeout(() => {
+                alert("Пакет даних успішно зашифровано та доставлено на сервер!");
+                e.target.reset();
+                btn.innerText = "ІНІЦІЮВАТИ ПЕРЕДАЧУ";
+                btn.style.background = "transparent";
+                btn.style.color = "var(--cyan)";
+            }, 1500);
+        });
+
+        /* 3. Частинки на фоні (Network Nodes) */
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        const katakana = 'АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ0123456789@#$%^&*';
-        const characters = katakana.split('');
-        const fontSize = 16;
-        const columns = canvas.width / fontSize;
+        let particlesArray = [];
+        const numberOfParticles = (canvas.width * canvas.height) / 15000;
 
-        const drops = [];
-        for (let x = 0; x < columns; x++) {
-            drops[x] = 1;
-        }
-
-        function draw() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.fillStyle = '#0F0';
-            ctx.font = fontSize + 'px monospace';
-
-            for (let i = 0; i < drops.length; i++) {
-                const text = characters[Math.floor(Math.random() * characters.length)];
-                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-
-                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-                    drops[i] = 0;
-                }
-                drops[i]++;
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.directionX = (Math.random() - 0.5) * 1;
+                this.directionY = (Math.random() - 0.5) * 1;
+                this.size = Math.random() * 2 + 1;
+            }
+            update() {
+                if (this.x > canvas.width || this.x < 0) this.directionX = -this.directionX;
+                if (this.y > canvas.height || this.y < 0) this.directionY = -this.directionY;
+                this.x += this.directionX;
+                this.y += this.directionY;
+                this.draw();
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0, 243, 255, 0.5)';
+                ctx.fill();
             }
         }
 
-        setInterval(draw, 33);
+        function init() {
+            particlesArray = [];
+            for (let i = 0; i < numberOfParticles; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
 
-        // Оновлюємо розмір при зміні вікна
-        window.addEventListener('resize', () => {
+        function connect() {
+            let opacityValue = 1;
+            for (let a = 0; a < particlesArray.length; a++) {
+                for (let b = a; b < particlesArray.length; b++) {
+                    let distance = ((particlesArray[a].x - particlesArray[b].x) * (particlesArray[a].x - particlesArray[b].x)) + 
+                                   ((particlesArray[a].y - particlesArray[b].y) * (particlesArray[a].y - particlesArray[b].y));
+                    if (distance < (canvas.width / 7) * (canvas.height / 7)) {
+                        opacityValue = 1 - (distance / 20000);
+                        ctx.strokeStyle = 'rgba(0, 243, 255, ' + opacityValue + ')';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
+                        ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+            }
+            connect();
+        }
+
+        window.addEventListener('resize', function() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+            init();
         });
+
+        init();
+        animate();
     </script>
 </body>
 </html>
